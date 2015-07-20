@@ -22,16 +22,18 @@ You can use my [node](http://45.79.11.47/) if you need a hidden service to conne
 If you want to compile from source you will also need to build the HiddenService branch of 
 my bitcoinj [fork](https://github.com/cpacia/bitcoinj).
 
+```
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
 
-sha256sum cbd11f564fdca3c8bf89cddfbe341583d38f42f6668f1ad7eecee3cc87a173f2  bitcoin-wallet.apk
+cbd11f564fdca3c8bf89cddfbe341583d38f42f6668f1ad7eecee3cc87a173f2  bitcoin-wallet.apk
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iF4EAREIAAYFAlWtH7AACgkQuJVtv+58EFwpjAD8DnbDl8xneTcHNu7t8ZgrRer0
-gFwTC6XFiaCoqWM6dzcA/ieBhVMPbFq9z/hU3XHpE1pukyltGTOwV2in6Hu43I7D
-=1Od0
+iF4EAREIAAYFAlWtJh0ACgkQuJVtv+58EFxUCAD/axTeXjbO2bjul8RiXQOGjQcc
+TtdOwYAlUyiX3FKSU1QA/0y3Nz5XzkT6m+MqpGeTsQELpBfdhF+3kvcuQLPdZbYT
+=87PV
 -----END PGP SIGNATURE-----
+```
 
 
