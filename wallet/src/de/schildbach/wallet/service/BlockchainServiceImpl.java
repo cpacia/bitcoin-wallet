@@ -392,7 +392,11 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 						final File directory = getDir("orchid", Constants.TEST ? Context.MODE_WORLD_READABLE : MODE_PRIVATE);
 						torClient.getConfig().setDataDirectory(directory);
 
-						peerGroup = PeerGroup.newWithTor(Constants.NETWORK_PARAMETERS, blockChain, torClient);
+						if (config.getTrustedPeerOnly()) {
+							peerGroup = PeerGroup.newWithTor(org.bitcoinj.core.Context.getOrCreate(Constants.NETWORK_PARAMETERS), blockChain, torClient, false);
+						} else {
+							peerGroup = PeerGroup.newWithTor(Constants.NETWORK_PARAMETERS, blockChain, torClient);
+						}
 					} catch (TimeoutException e){
 						log.error("TimeoutException occurred while starting PeerGroup with Tor");
 					}
