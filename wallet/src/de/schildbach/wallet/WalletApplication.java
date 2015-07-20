@@ -90,8 +90,6 @@ public class WalletApplication extends Application
 
 	private static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
 
-	private TorClient torClient = new TorClient();
-
 	@Override
 	public void onCreate()
 	{
@@ -162,8 +160,6 @@ public class WalletApplication extends Application
 	{
 		final File logDir = getDir("log", Constants.TEST ? Context.MODE_WORLD_READABLE : MODE_PRIVATE);
 		final File logFile = new File(logDir, "wallet.log");
-
-		//torClient.getConfig().setDataDirectory(logDir);
 
 		final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
@@ -572,9 +568,5 @@ public class WalletApplication extends Application
 		// workaround for no inexact set() before KitKat
 		final long now = System.currentTimeMillis();
 		alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, now + alarmInterval, AlarmManager.INTERVAL_DAY, alarmIntent);
-	}
-
-	public TorClient getTorClient(){
-		return torClient;
 	}
 }

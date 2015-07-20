@@ -18,6 +18,8 @@
 package de.schildbach.wallet.ui;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +81,7 @@ public final class PeerListFragment extends Fragment
 	private static final int ID_PEER_LOADER = 0;
 	private static final int ID_REVERSE_DNS_LOADER = 1;
 
-	private final Map<InetAddress, String> hostnames = new WeakHashMap<InetAddress, String>();
+	private final Map<InetSocketAddress, String> hostnames = new WeakHashMap<InetSocketAddress, String>();
 
 	private static final Logger log = LoggerFactory.getLogger(PeerListFragment.class);
 
@@ -142,7 +144,7 @@ public final class PeerListFragment extends Fragment
 					for (int i = 0; i < adapter.getItemCount(); i++)
 					{
 						final Peer peer = adapter.getItem(i);
-						final InetAddress address = peer.getAddress().getAddr();
+						final InetSocketAddress address = peer.getAddress().toSocketAddress();
 
 						if (!hostnames.containsKey(address))
 						{
@@ -252,9 +254,13 @@ public final class PeerListFragment extends Fragment
 			final VersionMessage versionMessage = peer.getPeerVersionMessage();
 			final boolean isDownloading = peer.getDownloadData();
 
-			final InetAddress address = peer.getAddress().getAddr();
-			final String hostname = hostnames.get(address);
-			holder.ipView.setText(hostname != null ? hostname : address.getHostAddress());
+			if (peer.getAddress().getAddr() != null) {
+				final InetAddress address = peer.getAddress().getAddr();
+				final String hostname = hostnames.get(address);
+				holder.ipView.setText(hostname != null ? hostname : address.getHostAddress());
+			} else if (peer.getAddress().getHostname() != null){
+				holder.ipView.setText(peer.getAddress().getHostname());
+			}
 
 			final long bestHeight = peer.getBestHeight();
 			holder.heightView.setText(bestHeight > 0 ? bestHeight + " blocks" : null);
@@ -378,9 +384,9 @@ public final class PeerListFragment extends Fragment
 
 	private static class ReverseDnsLoader extends AsyncTaskLoader<String>
 	{
-		public final InetAddress address;
+		public final InetSocketAddress address;
 
-		public ReverseDnsLoader(final Context context, final InetAddress address)
+		public ReverseDnsLoader(final Context context, final InetSocketAddress address)
 		{
 			super(context);
 
@@ -390,7 +396,11 @@ public final class PeerListFragment extends Fragment
 		@Override
 		public String loadInBackground()
 		{
-			return address.getCanonicalHostName();
+			if (address.getHostName() != null && address.getHostName().toLowerCase().endsWith(".onion")){
+				return "Tor Hidden Service";
+			} else {
+				return address.getAddress().getCanonicalHostName();
+			}
 		}
 	}
 
@@ -399,7 +409,7 @@ public final class PeerListFragment extends Fragment
 		@Override
 		public Loader<String> onCreateLoader(final int id, final Bundle args)
 		{
-			final InetAddress address = (InetAddress) args.getSerializable("address");
+			final InetSocketAddress address = (InetSocketAddress) args.getSerializable("address");
 
 			return new ReverseDnsLoader(activity, address);
 		}
@@ -407,7 +417,7 @@ public final class PeerListFragment extends Fragment
 		@Override
 		public void onLoadFinished(final Loader<String> loader, final String hostname)
 		{
-			final InetAddress address = ((ReverseDnsLoader) loader).address;
+			final InetSocketAddress address = ((ReverseDnsLoader) loader).address;
 			hostnames.put(address, hostname);
 
 			loaderManager.destroyLoader(ID_REVERSE_DNS_LOADER);

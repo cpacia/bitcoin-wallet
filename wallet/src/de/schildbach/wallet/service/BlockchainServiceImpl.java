@@ -44,6 +44,7 @@ import org.bitcoinj.core.CheckpointManager;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.FilteredBlock;
 import org.bitcoinj.core.Peer;
+import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.PeerEventListener;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Sha256Hash;
@@ -83,6 +84,9 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
+
+import com.subgraph.orchid.TorClient;
+
 import de.schildbach.wallet.AddressBookProvider;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
@@ -108,6 +112,7 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 	private BlockChain blockChain;
 	@Nullable
 	private PeerGroup peerGroup;
+	private TorClient torClient;
 
 	private final Handler handler = new Handler();
 	private final Handler delayHandler = new Handler();
@@ -381,8 +386,13 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 
 				log.info("starting peergroup");
 				if (config.getUseTor()){
+					System.gc();
 					try{
-						peerGroup = PeerGroup.newWithTor(Constants.NETWORK_PARAMETERS, blockChain, application.getTorClient());
+						torClient = new TorClient();
+						final File directory = getDir("orchid", Constants.TEST ? Context.MODE_WORLD_READABLE : MODE_PRIVATE);
+						torClient.getConfig().setDataDirectory(directory);
+
+						peerGroup = PeerGroup.newWithTor(Constants.NETWORK_PARAMETERS, blockChain, torClient);
 					} catch (TimeoutException e){
 						log.error("TimeoutException occurred while starting PeerGroup with Tor");
 					}
@@ -403,47 +413,57 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 				peerGroup.setMaxConnections(connectTrustedPeerOnly ? 1 : maxConnectedPeers);
 				peerGroup.setConnectTimeoutMillis(Constants.PEER_TIMEOUT_MS);
 
-				peerGroup.addPeerDiscovery(new PeerDiscovery()
-				{
-					private final PeerDiscovery normalPeerDiscovery = new DnsDiscovery(Constants.NETWORK_PARAMETERS);
+				if (!config.getUseTor()) {
+					peerGroup.addPeerDiscovery(new PeerDiscovery() {
+						private final PeerDiscovery normalPeerDiscovery = new DnsDiscovery(Constants.NETWORK_PARAMETERS);
 
-					@Override
-					public InetSocketAddress[] getPeers(final long timeoutValue, final TimeUnit timeoutUnit) throws PeerDiscoveryException
-					{
-						final List<InetSocketAddress> peers = new LinkedList<InetSocketAddress>();
+						@Override
+						public InetSocketAddress[] getPeers(final long timeoutValue, final TimeUnit timeoutUnit) throws PeerDiscoveryException {
+							final List<InetSocketAddress> peers = new LinkedList<InetSocketAddress>();
 
-						boolean needsTrimPeersWorkaround = false;
+							boolean needsTrimPeersWorkaround = false;
 
-						if (hasTrustedPeer)
-						{
-							log.info("trusted peer '" + trustedPeerHost + "'" + (connectTrustedPeerOnly ? " only" : ""));
+							if (hasTrustedPeer) {
+								log.info("trusted peer '" + trustedPeerHost + "'" + (connectTrustedPeerOnly ? " only" : ""));
 
-							final InetSocketAddress addr = new InetSocketAddress(trustedPeerHost, Constants.NETWORK_PARAMETERS.getPort());
-							if (addr.getAddress() != null)
-							{
-								peers.add(addr);
-								needsTrimPeersWorkaround = true;
+								final InetSocketAddress addr = new InetSocketAddress(trustedPeerHost, Constants.NETWORK_PARAMETERS.getPort());
+								if (addr.getAddress() != null) {
+									peers.add(addr);
+									needsTrimPeersWorkaround = true;
+								}
 							}
+
+							if (!connectTrustedPeerOnly)
+								peers.addAll(Arrays.asList(normalPeerDiscovery.getPeers(timeoutValue, timeoutUnit)));
+
+							// workaround because PeerGroup will shuffle peers
+							if (needsTrimPeersWorkaround)
+								while (peers.size() >= maxConnectedPeers)
+									peers.remove(peers.size() - 1);
+
+							return peers.toArray(new InetSocketAddress[0]);
 						}
 
-						if (!connectTrustedPeerOnly)
-							peers.addAll(Arrays.asList(normalPeerDiscovery.getPeers(timeoutValue, timeoutUnit)));
-
-						// workaround because PeerGroup will shuffle peers
-						if (needsTrimPeersWorkaround)
-							while (peers.size() >= maxConnectedPeers)
-								peers.remove(peers.size() - 1);
-
-						return peers.toArray(new InetSocketAddress[0]);
+						@Override
+						public void shutdown() {
+							normalPeerDiscovery.shutdown();
+						}
+					});
+				} else {
+					if (hasTrustedPeer) {
+						log.info("trusted peer '" + trustedPeerHost + "'" + (connectTrustedPeerOnly ? " only" : ""));
+						final InetSocketAddress addr;
+						if (trustedPeerHost.toLowerCase().endsWith(".onion")){
+							addr = InetSocketAddress.createUnresolved(trustedPeerHost, Constants.NETWORK_PARAMETERS.getPort());
+						} else {
+							addr = new InetSocketAddress(trustedPeerHost, Constants.NETWORK_PARAMETERS.getPort());
+						}
+						peerGroup.addAddress(new PeerAddress(addr));
+						if (connectTrustedPeerOnly){
+							peerGroup.setMaxConnections(1);
+						}
 					}
-
-					@Override
-					public void shutdown()
-					{
-						normalPeerDiscovery.shutdown();
-					}
-				});
-
+				}
 				// start peergroup
 				peerGroup.startAsync();
 				peerGroup.startBlockChainDownload(blockchainDownloadListener);
@@ -455,6 +475,11 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 				peerGroup.removeWallet(wallet);
 				peerGroup.stopAsync();
 				peerGroup = null;
+
+				if (config.getUseTor()) {
+					torClient.stop();
+					torClient = null;
+				}
 
 				log.debug("releasing wakelock");
 				wakeLock.release();
@@ -723,6 +748,12 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 			peerGroup.stop();
 
 			log.info("peergroup stopped");
+		}
+
+		if (torClient != null)
+		{
+			torClient.stop();
+			torClient = null;
 		}
 
 		peerConnectivityListener.stop();

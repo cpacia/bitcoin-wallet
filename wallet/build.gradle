@@ -10,7 +10,7 @@ dependencies {
     compile 'com.android.support:support-v13:22.0.0'
     compile 'com.android.support:recyclerview-v7:22.0.0'
     compile 'com.android.support:cardview-v7:22.0.0'
-    compile 'org.bitcoinj:bitcoinj-core:0.13.1'
+    compile 'org.bitcoinj:bitcoinj-core:0.14-SNAPSHOT'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile 'com.google.guava:guava:16.0.1'
     compile 'com.google.zxing:core:3.2.0'
@@ -28,7 +28,7 @@ ext {
 }
 
 android {
-    compileSdkVersion 'android-19'
+    compileSdkVersion 'android-22'
     buildToolsVersion '22.0.1'
 
     lintOptions { abortOnError false }
@@ -74,4 +74,8 @@ task svgToPng(type: fr.avianey.androidsvgdrawable.gradle.SvgDrawableTask) {
     to = file('res')
     targetedDensities = ['hdpi', 'xhdpi', 'xxhdpi']
     outputFormat = 'PNG'
+}
+
+repositories {
+    mavenLocal()
 }
