@@ -56,6 +56,11 @@
 			android:key="labs_qr_payment_request"
 			android:summary="Use payment protocol for QR-code initiated payments"
 			android:title="BIP70 for scan-to-pay" />
+		<CheckBoxPreference
+			android:defaultValue="false"
+			android:key="labs_tor"
+			android:summary="Connection to the Bitcoin Network through Tor. Uses an internal Tor library. No need to run Orbot."
+			android:title="Use Tor" />
 	</PreferenceCategory>
 
 </PreferenceScreen>

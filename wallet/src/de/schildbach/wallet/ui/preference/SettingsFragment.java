@@ -44,6 +44,7 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
 	private Preference btcPrecisionPreference;
 	private Preference trustedPeerPreference;
 	private Preference trustedPeerOnlyPreference;
+	private Preference useTorPreference;
 
 	@Override
 	public void onAttach(final Activity activity)
@@ -70,6 +71,9 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
 
 		trustedPeerOnlyPreference = findPreference(Configuration.PREFS_KEY_TRUSTED_PEER_ONLY);
 		trustedPeerOnlyPreference.setOnPreferenceChangeListener(this);
+
+		useTorPreference =  findPreference(Configuration.PREFS_KEY_LABS_TOR);
+		useTorPreference.setOnPreferenceChangeListener(this);
 
 		final Preference dataUsagePreference = findPreference(Configuration.PREFS_KEY_DATA_USAGE);
 		dataUsagePreference.setEnabled(pm.resolveActivity(dataUsagePreference.getIntent(), 0) != null);
@@ -108,6 +112,10 @@ public final class SettingsFragment extends PreferenceFragment implements OnPref
 					updateTrustedPeer((String) newValue);
 				}
 				else if (preference.equals(trustedPeerOnlyPreference))
+				{
+					application.stopBlockchainService();
+				}
+				else if (preference.equals(useTorPreference))
 				{
 					application.stopBlockchainService();
 				}

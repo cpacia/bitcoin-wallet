@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -379,7 +380,15 @@ public class BlockchainServiceImpl extends android.app.Service implements Blockc
 				}
 
 				log.info("starting peergroup");
-				peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, blockChain);
+				if (config.getUseTor()){
+					try{
+						peerGroup = PeerGroup.newWithTor(Constants.NETWORK_PARAMETERS, blockChain, application.getTorClient());
+					} catch (TimeoutException e){
+						log.error("TimeoutException occurred while starting PeerGroup with Tor");
+					}
+				} else {
+					peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, blockChain);
+				}
 				peerGroup.setDownloadTxDependencies(false); // recursive implementation causes StackOverflowError
 				peerGroup.addWallet(wallet);
 				peerGroup.setUserAgent(Constants.USER_AGENT, application.packageInfo().versionName);

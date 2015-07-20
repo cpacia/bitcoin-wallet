@@ -50,6 +50,7 @@ public class Configuration
 	public static final String PREFS_KEY_DATA_USAGE = "data_usage";
 	public static final String PREFS_KEY_DISCLAIMER = "disclaimer";
 	private static final String PREFS_KEY_LABS_QR_PAYMENT_REQUEST = "labs_qr_payment_request";
+	public static final String PREFS_KEY_LABS_TOR = "labs_tor";
 
 	private static final String PREFS_KEY_LAST_VERSION = "last_version";
 	private static final String PREFS_KEY_LAST_USED = "last_used";
@@ -129,6 +130,10 @@ public class Configuration
 	public boolean getTrustedPeerOnly()
 	{
 		return prefs.getBoolean(PREFS_KEY_TRUSTED_PEER_ONLY, false);
+	}
+
+	public boolean getUseTor(){
+		return prefs.getBoolean(PREFS_KEY_LABS_TOR, false);
 	}
 
 	public boolean remindBackup()

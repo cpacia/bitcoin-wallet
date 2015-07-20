@@ -45,4 +45,9 @@ public final class PreferenceActivity extends android.preference.PreferenceActiv
 
 		return super.onOptionsItemSelected(item);
 	}
+
+	protected boolean isValidFragment(String fragmentName) {
+		return true;
+	}
+
 }

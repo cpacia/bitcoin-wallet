@@ -7,8 +7,8 @@
 	android:versionName="4.37" >
 
 	<uses-sdk
-		android:minSdkVersion="15"
-		android:targetSdkVersion="16"
+		android:minSdkVersion="19"
+		android:targetSdkVersion="22"
 		tools:ignore="OldTargetApi" />
 
 	<uses-permission android:name="android.permission.INTERNET" />
